@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "moduleResolution": "Node",
+        "module": "CommonJS",
+        "allowSyntheticDefaultImports": true,
+        "strict": true,
+        "lib": [
+            "ESNext",
+            "DOM",
+            "ScriptHost"
+        ],
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "pretty": true,
+        "target": "ES2019",
+        "sourceMap": true,
+        "outDir": "build"
+    }
+}
