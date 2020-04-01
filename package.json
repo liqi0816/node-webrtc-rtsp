@@ -1,23 +1,24 @@
 {
   "name": "webrtc",
-  "main": "server.js",
+  "main": "build/server.js",
   "dependencies": {
     "ffbinaries": "^1.1.4",
     "fluent-ffmpeg": "^2.1.2",
     "koa": "^2.11.0",
     "koa-body": "^4.1.1",
     "koa-router": "^8.0.8",
-    "uuid": "^7.0.2",
     "wrtc": "^0.4.4"
   },
   "private": true,
   "scripts": {
-    "install": "ffbinaries ffmpeg"
+    "install": "ffbinaries ffmpeg",
+    "build": "rimraf build && tsc"
   },
   "devDependencies": {
     "@types/koa": "^2.11.3",
     "@types/koa-router": "^7.4.0",
     "@types/uuid": "^7.0.2",
+    "rimraf": "^3.0.2",
     "typescript": "^3.8.3"
   }
 }
