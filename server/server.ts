@@ -1,25 +1,36 @@
 import * as Koa from 'koa';
 import * as koaBody from 'koa-body';
+import * as koaStatic from 'koa-static';
 import * as KoaRouter from 'koa-router';
-import { MyRTCPeerConnection } from './webrtc.js';
+import { ServerRTCPeerConnection } from './peer.js';
 
-const connections = new Map<string, MyRTCPeerConnection>();
+const connections = new Map<string, ServerRTCPeerConnection>();
 const router = new KoaRouter();
 
-router.use(koaBody());
+router.get('/*', koaStatic(`${__dirname}/../client`));
+router.get('/client/*', koaStatic(`${__dirname}/..`));
 
-router.get('/connections', (ctx, next) => {
-    ctx.body = Object.fromEntries([...connections.entries()]);
-    return next();
-});
+{
+    const mapConnectionsDescription = function* mapConnectionsDescription(
+        connections: Map<string, ServerRTCPeerConnection>
+    ): IterableIterator<[string, ServerRTCPeerConnection['description']]> {
+        for (const [id, { description }] of connections) {
+            yield [id, description];
+        }
+    }
+    router.get('/connections', (ctx, next) => {
+        ctx.body = JSON.stringify(Object.fromEntries(mapConnectionsDescription(connections)));
+        return next();
+    });
+}
 
 router.post('/connections', async (ctx, next) => {
     {
         let id: string;
         do {
-            id = await MyRTCPeerConnection.genId();
+            id = await ServerRTCPeerConnection.genId();
         } while (connections.has(id));
-        const connection = new MyRTCPeerConnection(id);
+        const connection = new ServerRTCPeerConnection(id);
         connections.set(id, connection);
         await connection.initialize();
         connection.addEventListener('close', () => connections.delete(id));
@@ -61,7 +72,7 @@ router.get('/connections/:id/remote-description', (ctx, next) => {
     return next();
 });
 
-router.post('/connections/:id/remote-description', async (ctx, next) => {
+router.post('/connections/:id/remote-description', koaBody(), async (ctx, next) => {
     const { id } = ctx.params;
     const connection = connections.get(id);
     if (!connection) return ctx.throw(404);
@@ -72,4 +83,5 @@ router.post('/connections/:id/remote-description', async (ctx, next) => {
 
 const app = new Koa();
 app.use(router.routes());
+app.use(router.allowedMethods());
 if (!module.parent) app.listen(80);

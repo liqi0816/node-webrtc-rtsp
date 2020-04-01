@@ -1,30 +1,33 @@
-import { RTCPeerConnection } from 'wrtc';
-import { sleep } from './util.js';
+import { RTCPeerConnection, RTCVideoSink } from 'wrtc';
+import { sleep } from '../common/util.js';
 import { randomBytes } from 'crypto';
 import { promisify } from 'util';
 
 export const randomBytesAsync = promisify(randomBytes);
 
-export class MyRTCPeerConnection extends RTCPeerConnection {
+export class ServerRTCPeerConnection extends RTCPeerConnection {
     id: string
+    creationTimestamp: ReturnType<typeof Date.now>
 
     static TIME_TO_CONNECTED = 10000;
     static TIME_TO_HOST_CANDIDATES = 3000;  // NOTE(mroberts): Too long.
     static TIME_TO_RECONNECTED = 10000;
-    timeToConnected = MyRTCPeerConnection.TIME_TO_CONNECTED;
-    timeToHostCandidates = MyRTCPeerConnection.TIME_TO_HOST_CANDIDATES;
-    timeToReconnected = MyRTCPeerConnection.TIME_TO_RECONNECTED;
+    timeToConnected = ServerRTCPeerConnection.TIME_TO_CONNECTED;
+    timeToHostCandidates = ServerRTCPeerConnection.TIME_TO_HOST_CANDIDATES;
+    timeToReconnected = ServerRTCPeerConnection.TIME_TO_RECONNECTED;
 
-    videoTransceiver: RTCRtpTransceiver | null = null;
-
-    constructor(id: string) {
-        super(...arguments);
+    constructor(id: string, configuration?: RTCConfiguration) {
+        super(configuration);
         this.id = id;
+        this.creationTimestamp = Date.now();
     }
 
+    videoTransceiver: RTCRtpTransceiver | null = null;
+    videoSink: RTCVideoSink | null = null;
     async initialize() {
         this.dispatchEvent({ type: 'beforeinitialize' } as Event);
         this.videoTransceiver = this.addTransceiver('video');
+        this.videoSink = new RTCVideoSink(this.videoTransceiver.receiver.track);
         const offer = await this.createOffer({ offerToReceiveVideo: true });
         await this.setLocalDescription(offer);
         await sleep(0);
@@ -66,14 +69,14 @@ export class MyRTCPeerConnection extends RTCPeerConnection {
 
     get description() {
         const { id, iceConnectionState, localDescription, remoteDescription, signalingState } = this;
-        return { id, iceConnectionState, signalingState, localDescription, remoteDescription, };
+        return { id, iceConnectionState, localDescription, remoteDescription, signalingState };
     }
 
     get localDescription(): RTCSessionDescription | null {
         const localDescription = super.localDescription;
         if (!localDescription) return localDescription;
 
-        return { ...localDescription, sdp: MyRTCPeerConnection.disableTrickleIce(localDescription.sdp) };
+        return { ...localDescription, sdp: ServerRTCPeerConnection.disableTrickleIce(localDescription.sdp) };
     }
 
     close() {
