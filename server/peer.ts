@@ -62,33 +62,55 @@ export class ServerRTCPeerConnection extends RTCPeerConnection {
         return this.description;
     }
 
-    ffmpeg: ffmpeg.FfmpegCommand | null = null
-    stream: PassThrough | null = null;
+    recordStream: PassThrough | null = null;
     width = 0;
     height = 0;
-    frameHandler = ({ frame: { width, height, data } }: nonstandard.FrameEvent) => {
-        const stream = this.stream!;
+    recordFfmpeg: ffmpeg.FfmpegCommand | null = null
+    recordPathPrefix = `./${this.id}`
+    recordFrameHandler = ({ frame: { width, height, data } }: nonstandard.FrameEvent) => {
+        if (this.width !== width || this.height !== height) {
+            this.stopRecord(true);
 
-        if (!this.ffmpeg) { }
-        const size = `${width}x${height}`;
-
-
-        stream.push(data);
+            this.recordStream = new PassThrough();
+            this.width = width;
+            this.height = height;
+            this.recordFfmpeg = ffmpeg()
+                .addInput(this.recordStream)
+                .addInputOptions([
+                    '-f', 'rawvideo',
+                    '-pix_fmt', 'yuv420p',
+                    '-s', `${width}x${height}`,
+                    '-r', '30',
+                ])
+                .output(`${this.recordPathPrefix}-${Date.now()}-${width}x${height}.mp4`);
+            this.recordFfmpeg.run();
+        }
+        if (!this.recordStream) throw new TypeError('stream uninitialized');
+        this.recordStream.push(data);
     };
     async record() {
         const { videoSink } = this;
-        if (!videoSink) throw new TypeError();
-
-        const VIDEO_OUTPUT_SIZE = '320x240'
-        const VIDEO_OUTPUT_FILE = './recording.mp4'
-
-        videoSink.addEventListener('frame', this.frameHandler);
+        if (!videoSink) throw new TypeError('videoSink needs to be initialized');
+        videoSink.addEventListener('frame', this.recordFrameHandler);
+        return this.recordPathPrefix;
     }
 
-    async stopRecord() {
+    stopRecord(restart = false) {
+        if (this.recordStream) {
+            this.recordStream.end();
+            if (!this.width || !this.height) throw new TypeError('stream found but width/height uninitialized');
+            this.width = this.height = 0;
+            if (!this.recordFfmpeg) throw new TypeError('stream found but ffmpeg uninitialized');
+            this.recordFfmpeg.kill('SIGINT');
+            this.recordFfmpeg = null;
+        }
+
+        if (restart) return this.recordPathPrefix;
+
         const { videoSink } = this;
-        if (!videoSink) throw new TypeError();
-        videoSink.removeEventListener('frame', this.frameHandler);
+        if (!videoSink) throw new TypeError('videoSink needs to be initialized');
+        videoSink.removeEventListener('frame', this.recordFrameHandler);
+        return this.recordPathPrefix;
     }
 
     async respond(answer: RTCSessionDescription) {

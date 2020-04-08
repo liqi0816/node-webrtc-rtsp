@@ -5,7 +5,7 @@ declare module 'wrtc' {
 
     namespace nonstandard {
         interface FrameEvent extends Event {
-            frame: { width: number, height: number, data: Uint8ClampedArray }
+            frame: { width: number, height: number, data: Uint8Array }
         }
 
         class RTCVideoSink extends EventTarget {

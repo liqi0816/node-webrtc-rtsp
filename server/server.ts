@@ -49,6 +49,31 @@ router.get('/connections/:id', (ctx, next) => {
     return next();
 });
 
+router.post('/connections/:id/record', koaBody(), async (ctx, next) => {
+    const { id } = ctx.params;
+    const connection = connections.get(id);
+    if (!connection) return ctx.throw(404);
+    const { status } = ctx.request.body;
+    if (typeof status !== 'string') {
+        ctx.throw(400);
+    }
+    else if (status === 'started') {
+        ctx.body = await connection.record();
+    }
+    else if (status === 'stopped') {
+        ctx.body = await connection.stopRecord();
+    }
+    return next();
+});
+
+router.get('/connections/:id/record', (ctx, next) => {
+    const { id } = ctx.params;
+    const connection = connections.get(id);
+    if (!connection) return ctx.throw(404);
+    ctx.throw(501);
+    return next();
+});
+
 router.get('/connections/:id/local-description', (ctx, next) => {
     const { id } = ctx.params;
     const connection = connections.get(id);
