@@ -3,7 +3,8 @@ import { sleep } from '../common/util.js';
 import { randomBytes } from 'crypto';
 import { promisify } from 'util';
 import { PassThrough } from 'stream';
-import ffmpeg from 'fluent-ffmpeg';
+import * as ffmpeg from 'fluent-ffmpeg';
+import '../common/path-ffmpeg.js';
 
 export const randomBytesAsync = promisify(randomBytes);
 
@@ -25,6 +26,7 @@ export class ServerRTCPeerConnection extends RTCPeerConnection {
         super(configuration);
         this.id = id;
         this.creationTimestamp = Date.now();
+        this.recordPathPrefix = `./${id}`;
     }
 
     videoTransceiver: RTCRtpTransceiver | null = null;
@@ -66,11 +68,12 @@ export class ServerRTCPeerConnection extends RTCPeerConnection {
     width = 0;
     height = 0;
     recordFfmpeg: ffmpeg.FfmpegCommand | null = null
-    recordPathPrefix = `./${this.id}`
+    recordPathPrefix: string
     recordFrameHandler = ({ frame: { width, height, data } }: nonstandard.FrameEvent) => {
         if (this.width !== width || this.height !== height) {
             this.stopRecord(true);
 
+            const frameRate = '' + (this.videoTransceiver!.receiver.track.getSettings().frameRate ?? 30);
             this.recordStream = new PassThrough();
             this.width = width;
             this.height = height;
@@ -80,7 +83,7 @@ export class ServerRTCPeerConnection extends RTCPeerConnection {
                     '-f', 'rawvideo',
                     '-pix_fmt', 'yuv420p',
                     '-s', `${width}x${height}`,
-                    '-r', '30',
+                    '-r', frameRate,
                 ])
                 .output(`${this.recordPathPrefix}-${Date.now()}-${width}x${height}.mp4`);
             this.recordFfmpeg.run();
@@ -101,7 +104,9 @@ export class ServerRTCPeerConnection extends RTCPeerConnection {
             if (!this.width || !this.height) throw new TypeError('stream found but width/height uninitialized');
             this.width = this.height = 0;
             if (!this.recordFfmpeg) throw new TypeError('stream found but ffmpeg uninitialized');
-            this.recordFfmpeg.kill('SIGINT');
+            // (async () => {
+            //     this.recordFfmpeg.kill('SIGINT');
+            // })();
             this.recordFfmpeg = null;
         }
 
