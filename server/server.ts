@@ -10,32 +10,25 @@ const router = new KoaRouter();
 router.get('/*', koaStatic(`${__dirname}/../client`));
 router.get('/client/*', koaStatic(`${__dirname}/..`));
 
-{
-    const mapConnectionsDescription = function* mapConnectionsDescription(
-        connections: Map<string, ServerRTCPeerConnection>
-    ): IterableIterator<[string, ServerRTCPeerConnection['description']]> {
-        for (const [id, { description }] of connections) {
-            yield [id, description];
-        }
+const mapConnectionsDescription = function* mapConnectionsDescription(
+    connections: Map<string, ServerRTCPeerConnection>
+): IterableIterator<[string, ServerRTCPeerConnection['description']]> {
+    for (const [id, { description }] of connections) {
+        yield [id, description];
     }
-    router.get('/connections', (ctx, next) => {
-        ctx.body = JSON.stringify(Object.fromEntries(mapConnectionsDescription(connections)));
-        return next();
-    });
 }
+router.get('/connections', (ctx, next) => {
+    ctx.body = JSON.stringify(Object.fromEntries(mapConnectionsDescription(connections)));
+    return next();
+});
 
 router.post('/connections', async (ctx, next) => {
-    {
-        let id: string;
-        do {
-            id = await ServerRTCPeerConnection.genId();
-        } while (connections.has(id));
-        const connection = new ServerRTCPeerConnection(id);
-        connections.set(id, connection);
-        await connection.initialize();
-        connection.addEventListener('close', () => connections.delete(id));
-        ctx.body = connection.description;
-    }
+    const id = await ServerRTCPeerConnection.genId(connections);
+    const connection = new ServerRTCPeerConnection(id);
+    connections.set(id, connection);
+    await connection.initialize();
+    connection.addEventListener('close', () => connections.delete(id));
+    ctx.body = connection.description;
     return next();
 });
 

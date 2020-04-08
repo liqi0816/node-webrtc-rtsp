@@ -1,9 +1,14 @@
-import { RTCPeerConnection, RTCVideoSink } from 'wrtc';
+import { RTCPeerConnection, nonstandard } from 'wrtc';
 import { sleep } from '../common/util.js';
 import { randomBytes } from 'crypto';
 import { promisify } from 'util';
+import { PassThrough } from 'stream';
+import ffmpeg from 'fluent-ffmpeg';
 
 export const randomBytesAsync = promisify(randomBytes);
+
+export type RTCVideoSink = nonstandard.RTCVideoSink;
+export const RTCVideoSink = nonstandard.RTCVideoSink;
 
 export class ServerRTCPeerConnection extends RTCPeerConnection {
     id: string
@@ -26,8 +31,11 @@ export class ServerRTCPeerConnection extends RTCPeerConnection {
     videoSink: RTCVideoSink | null = null;
     async initialize() {
         this.dispatchEvent({ type: 'beforeinitialize' } as Event);
+
         this.videoTransceiver = this.addTransceiver('video');
         this.videoSink = new RTCVideoSink(this.videoTransceiver.receiver.track);
+        this.dispatchEvent({ type: 'videostream' } as Event);
+
         const offer = await this.createOffer({ offerToReceiveVideo: true });
         await this.setLocalDescription(offer);
         await sleep(0);
@@ -42,7 +50,6 @@ export class ServerRTCPeerConnection extends RTCPeerConnection {
             }
         }
 
-        this.dispatchEvent({ type: 'initialize' } as Event);
         void (async () => {
             await sleep(this.timeToConnected);
             if (!['connected', 'completed'].includes(this.iceConnectionState)) {
@@ -50,7 +57,38 @@ export class ServerRTCPeerConnection extends RTCPeerConnection {
                 this.close();
             };
         })();
+
+        this.dispatchEvent({ type: 'initialize' } as Event);
         return this.description;
+    }
+
+    ffmpeg: ffmpeg.FfmpegCommand | null = null
+    stream: PassThrough | null = null;
+    width = 0;
+    height = 0;
+    frameHandler = ({ frame: { width, height, data } }: nonstandard.FrameEvent) => {
+        const stream = this.stream!;
+
+        if (!this.ffmpeg) { }
+        const size = `${width}x${height}`;
+
+
+        stream.push(data);
+    };
+    async record() {
+        const { videoSink } = this;
+        if (!videoSink) throw new TypeError();
+
+        const VIDEO_OUTPUT_SIZE = '320x240'
+        const VIDEO_OUTPUT_FILE = './recording.mp4'
+
+        videoSink.addEventListener('frame', this.frameHandler);
+    }
+
+    async stopRecord() {
+        const { videoSink } = this;
+        if (!videoSink) throw new TypeError();
+        videoSink.removeEventListener('frame', this.frameHandler);
     }
 
     async respond(answer: RTCSessionDescription) {
@@ -88,7 +126,13 @@ export class ServerRTCPeerConnection extends RTCPeerConnection {
         return sdp.replace(/\r\na=ice-options:trickle/g, '');
     }
 
-    static async genId() {
-        return (await randomBytesAsync(24)).toString('hex');
+    static async genId(connections?: Map<string, ServerRTCPeerConnection>) {
+        let id = (await randomBytesAsync(24)).toString('hex');
+        if (!connections) return id;
+
+        while (connections.has(id)) {
+            id = (await randomBytesAsync(24)).toString('hex');
+        }
+        return id;
     }
 };

@@ -1,6 +1,6 @@
 import { ServerRTCPeerConnection } from '../server/peer.js';
 
-class ClientRTCPeerConnection extends RTCPeerConnection {
+export class ClientRTCPeerConnection extends RTCPeerConnection {
     id: string | null = null;
     endpoint = 'http://127.0.0.1';
 

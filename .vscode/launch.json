@@ -7,8 +7,8 @@
             "name": "启动程序",
             "program": "${workspaceFolder}/build/server/server.js",
             "skipFiles": [
-                // "node_modules/**/*.js",
-                // "lib/**/*.js",
+                "node_modules/**/*.js",
+                "lib/**/*.js",
                 "runtime/**/*.js",
                 "async_hooks.js",
                 "inspector_async_hook.js",

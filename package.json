@@ -15,6 +15,7 @@
     "build": "rimraf build && tsc && copyfiles -a ./client/**/* ./build"
   },
   "devDependencies": {
+    "@types/fluent-ffmpeg": "^2.1.14",
     "@types/koa": "^2.11.3",
     "@types/koa-router": "^7.4.0",
     "@types/koa-static": "^4.0.1",
