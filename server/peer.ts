@@ -101,12 +101,10 @@ export class ServerRTCPeerConnection extends RTCPeerConnection {
     stopRecord(restart = false) {
         if (this.recordStream) {
             this.recordStream.end();
+            this.recordStream = null;
             if (!this.width || !this.height) throw new TypeError('stream found but width/height uninitialized');
             this.width = this.height = 0;
             if (!this.recordFfmpeg) throw new TypeError('stream found but ffmpeg uninitialized');
-            // (async () => {
-            //     this.recordFfmpeg.kill('SIGINT');
-            // })();
             this.recordFfmpeg = null;
         }
 

@@ -49,6 +49,14 @@ router.get('/connections/:id', (ctx, next) => {
     return next();
 });
 
+router.get('/connections/:id/record', (ctx, next) => {
+    const { id } = ctx.params;
+    const connection = connections.get(id);
+    if (!connection) return ctx.throw(404);
+    ctx.body = connection.recordPathPrefix;
+    return next();
+});
+
 router.post('/connections/:id/record', koaBody(), async (ctx, next) => {
     const { id } = ctx.params;
     const connection = connections.get(id);
@@ -66,11 +74,20 @@ router.post('/connections/:id/record', koaBody(), async (ctx, next) => {
     return next();
 });
 
-router.get('/connections/:id/record', (ctx, next) => {
+router.get('/connections/:id/framerate', (ctx, next) => {
     const { id } = ctx.params;
     const connection = connections.get(id);
     if (!connection) return ctx.throw(404);
-    ctx.throw(501);
+    ctx.body = '' + connection.frameRate;
+    return next();
+});
+
+router.post('/connections/:id/framerate', koaBody(), (ctx, next) => {
+    const { id } = ctx.params;
+    const connection = connections.get(id);
+    if (!connection) return ctx.throw(404);
+    connection.frameRate = +ctx.request.body;
+    ctx.status = 204;
     return next();
 });
 
