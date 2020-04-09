@@ -67,13 +67,22 @@ export class ServerRTCPeerConnection extends RTCPeerConnection {
     recordStream: PassThrough | null = null;
     width = 0;
     height = 0;
-    recordFfmpeg: ffmpeg.FfmpegCommand | null = null
-    recordPathPrefix: string
+    frameRate = 60;
+    recordFfmpeg: ffmpeg.FfmpegCommand | null = null;
+    recordPathPrefix: string;
+    ts = [] as number[] | undefined;
     recordFrameHandler = ({ frame: { width, height, data } }: nonstandard.FrameEvent) => {
+        if (this.ts) {
+            this.ts.push(Date.now());
+            if (this.ts.length === 300) {
+                console.log(`${this.id}: real fps = ${this.ts.length / ((this.ts[this.ts.length - 1] - this.ts[0]) / 1000)}`);
+                console.log(`${this.id}: declare fps = ${this.frameRate}`)
+                this.ts = undefined;
+            }
+        }
         if (this.width !== width || this.height !== height) {
             this.stopRecord(true);
 
-            const frameRate = '' + (this.videoTransceiver!.receiver.track.getSettings().frameRate ?? 30);
             this.recordStream = new PassThrough();
             this.width = width;
             this.height = height;
@@ -83,8 +92,11 @@ export class ServerRTCPeerConnection extends RTCPeerConnection {
                     '-f', 'rawvideo',
                     '-pix_fmt', 'yuv420p',
                     '-s', `${width}x${height}`,
-                    '-r', frameRate,
+                    '-r', '' + this.frameRate,
+                    '-fflags', 'nobuffer',
                 ])
+                // .outputFormat('rtsp')
+                // .output(`rtsp://127.0.0.1:5554/${this.id}`);
                 .output(`${this.recordPathPrefix}-${Date.now()}-${width}x${height}.mp4`);
             this.recordFfmpeg.run();
         }

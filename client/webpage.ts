@@ -19,6 +19,14 @@ declare global {
         video: { width: 4096, height: 2160 },
     });
     const track = window.track = stream.getTracks()[0];
+    /**
+     * weird bug: frameRate = 29.97              => everything ok
+     *            frameRate = 29.97002983093261  => everything ok
+     *            frameRate = 29.970029830932614 => everything ok
+     *            frameRate = 29.970029830932617 => real fps received at server = ~60
+     * Workaround: fix frameRate to 29.97 or whatever else
+     */
+    await track.applyConstraints({ frameRate: +(track.getSettings().frameRate ?? 25).toFixed(2) });
 
     const video = window.video = document.getElementsByTagName('video')[0];
     video.srcObject = stream;
