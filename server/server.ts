@@ -7,8 +7,8 @@ import { ServerRTCPeerConnection } from './peer.js';
 const connections = new Map<string, ServerRTCPeerConnection>();
 const router = new KoaRouter();
 
-router.get('/*', koaStatic(`${__dirname}/../client`));
-router.get('/client/*', koaStatic(`${__dirname}/..`));
+router.get('(/.*)', koaStatic(`${__dirname}/../client`));
+router.get('(/client/.*)', koaStatic(`${__dirname}/..`));
 
 const mapConnectionsDescription = function* mapConnectionsDescription(
     connections: Map<string, ServerRTCPeerConnection>
@@ -119,4 +119,4 @@ router.post('/connections/:id/remote-description', koaBody(), async (ctx, next) 
 const app = new Koa();
 app.use(router.routes());
 app.use(router.allowedMethods());
-if (!module.parent) app.listen(80);
+if (require.main === module) app.listen(8080);

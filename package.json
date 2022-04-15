@@ -4,11 +4,11 @@
   "dependencies": {
     "ffbinaries": "^1.1.4",
     "fluent-ffmpeg": "^2.1.2",
-    "koa": "^2.11.0",
-    "koa-body": "^4.1.1",
-    "koa-router": "^8.0.8",
+    "koa": "^2.13.4",
+    "koa-body": "^4.2.0",
+    "koa-router": "^10.1.1",
     "koa-static": "^5.0.0",
-    "wrtc": "^0.4.4"
+    "wrtc": "^0.4.7"
   },
   "private": true,
   "scripts": {
@@ -16,15 +16,16 @@
     "build": "rimraf build && tsc && copyfiles -a ./client/**/* ./build"
   },
   "devDependencies": {
-    "@types/fluent-ffmpeg": "^2.1.14",
-    "@types/koa": "^2.11.3",
-    "@types/koa-router": "^7.4.0",
-    "@types/koa-static": "^4.0.1",
-    "@types/uuid": "^7.0.2",
-    "copyfiles": "^2.2.0",
+    "@types/fluent-ffmpeg": "^2.1.20",
+    "@types/koa": "^2.13.4",
+    "@types/koa-router": "^7.4.4",
+    "@types/koa-static": "^4.0.2",
+    "@types/uuid": "^8.3.4",
+    "copyfiles": "^2.4.1",
+    "node-pre-gyp": "^0.17.0",
     "rimraf": "^3.0.2",
     "rtsp-streaming-server": "^2.0.6",
-    "typescript": "^3.8.3"
+    "typescript": "^4.6.3"
   },
   "version": "0.0.1",
   "author": "LI, Qi <goodlq11@gmail.com>",

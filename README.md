@@ -29,7 +29,7 @@ node ./build/server/server.js
 
 ## Frontend
 
-Navigate to http://127.0.0.1 Then click `startRecord`. An id will be allocated.
+Navigate to http://127.0.0.1:8080 Then click `startRecord`. An id will be allocated.
 
 ## Playback
 
