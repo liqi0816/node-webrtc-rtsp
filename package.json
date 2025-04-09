@@ -4,7 +4,7 @@
   "dependencies": {
     "ffbinaries": "^1.1.4",
     "fluent-ffmpeg": "^2.1.2",
-    "koa": "^2.13.4",
+    "koa": "^2.16.1",
     "koa-body": "^4.2.0",
     "koa-router": "^10.1.1",
     "koa-static": "^5.0.0",
